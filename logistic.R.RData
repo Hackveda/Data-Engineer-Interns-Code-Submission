@@ -2,36 +2,48 @@ install.packages("tidyverse")
 install.packages("dplyr")
 install.packages("caret")
 install.packages("DAAG")
+
+
 Attrition <- c("Yes", "No", "No", "Yes", "No", "Yes", "No", "Yes", "Yes", "Yes", "Yes", "No", "No", "No", "No", "No", "Yes", "No", "Yes", "Yes", "Yes", "No", "Yes", "Yes", "No", "No", "Yes", "No", "Yes", "Yes")
 Yrs_Exp <- c(2.5, 2, 2.5, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 2, 2, 2, 2, 4.5, 4, 4, 4, 4.5, 3, 2.5, 4, 3, 2.5, 4.5, 4.5, 2.5)
 Work_Challenging <- c("No", "Yes", "Yes", "No", "Yes", "No", "No", "No", "No", "Yes", "No", "Yes", "Yes", "Yes", "Yes", "Yes", "No", "Yes", "No", "Yes", "No", "No", "No", "Yes", "Yes", "No", "No",  "Yes", "Yes", "No")
 Work_Envir <- c("Low", "Excellent", "Excellent", "Excellent", "Low", "Low", "Excellent", "Low", "Excellent", "Low", "Excellent", "Excellent", "Excellent", "Excellent", "Low", "Excellent", "Low", "Excellent", "Excellent", "Low", "Low", "Excellent", "Excellent", "Low", "Excellent", "Excellent", "Low", "Excellent", "Low", "Excellent")
 Compensation <- c("Low", "Excellent", "Low", "Low", "Low", "Low", "Excellent", "Low", "Excellent", "Excellent", "Low", "Low", "Excellent",  "Excellent", "Excellent", "Low", "Excellent", "Low", "Low", "Excellent", "Low", "Excellent", "Excellent", "Excellent", "Low", "Excellent", "Low", "Low", "Excellent", "Low")
 Tech_Exper <- c("Excellent", "Excellent", "Excellent", "Excellent", "Low", "Excellent", "Low", "Excellent", "Excellent", "Excellent", "Excellent", "Excellent", "Excellent", "Excellent", "Low", "Low", "Excellent", "Excellent", "Excellent", "Excellent", "Excellent", "Excellent", "Low", "Low", "Low", "Excellent", "Excellent", "Excellent", "Low", "Excellent")
+
 attrition_data <- data.frame(Attrition, Yrs_Exp, Work_Challenging, Work_Envir, Compensation, Tech_Exper, header=TRUE, sep=",", stringsAsFactors = T)
+
 # Read and View Dataset
+
 View(attrition_data)
 summary(attrition_data)
 head(attrition_data)
 tail
 tail(attrition_data)
+
 # Creating the Logistic Regression Model
 attrition_logit_model = glm(Attrition ~ Yrs_Exp + Work_Challenging + Work_Envir + Compensation + Tech_Exper, data = attrition_data, family = binomial(link="logit"))
 summary(attrition_logit_model)
+
 # Eliminate the non-significant variables and recast the Model
 attrition_logit_recast = glm(Attrition ~ Work_Challenging + Work_Envir + Compensation + Tech_Exper, data = attrition_data, family = binomial(link="logit"))
 summary(attrition_logit_recast)
+
 # Model Fit Verification
 pseudo_R_squared <- 1-(attrition_logit_recast$deviance / attrition_logit_recast$null.deviance)
 pseudo_R_squared
+
 # Comparison Test
 anova(attrition_logit_recast, attrition_logit_model, "PChiSq")
+
 # Multicollinearity Test
 library(DAAG)
 vif(attrition_logit_recast)
+
 # Dispersion Test
 overdisp_indicator <- attrition_logit_recast$residuals / attrition_logit_recast$df.residuals
 overdisp_indicator
+
 #  Create a Training data and Test data
 library(caret)
 attri_data_partition <- createDataPartition(attrition_data$Attrition, p=0.80, list=FALSE)
@@ -39,13 +51,16 @@ attri_training_data <- attrition_data[attri_data_partition, ]
 attri_testing_data <- attrition_data[-attri_data_partition, ]
 summary(attri_training_data)
 summary(attri_testing_data)
+
 # Generating Model from Training data
 train_logit_model <- glm(Attrition ~ Work_Challenging + Work_Envir + Compensation + Tech_Exper, data = attri_training_data, family = binomial(link="logit"))
 summary(train_logit_model)
+
 # Predicting the new data using our model
 df_newdata <- data.frame(Yrs_Exp=3, Work_Challenging="No", Work_Envir="Excellent", Compensation="Excellent", Tech_Exper="Excellent")
 attri_predicted <- predict(attrition_logit_recast, newdata=df_newdata, type="response")
 attri_predicted
+
 # Validating the Logistic Regression Model
 attri_predicted_value <- predict(attrition_logit_recast, type="response")
 table(attrition_data$Attrition, attri_predicted_value > 0.5)
