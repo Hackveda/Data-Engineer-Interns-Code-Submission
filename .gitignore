@@ -1,4 +1,34 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
+install.packages("tidyverse")
+install.packages("dplyr")
+install.packages("arules")
+install.packages("arulesviz")
+
+Groceries <- read.csv("Groceries.csv", header=T, colClasses = "factor")
+str(Groceries)
+
+# Association rules
+
+library(arules)
+rules <- apriori(Groceries)
+
+# Rules with parameter values
+
+rules <- apriori(Groceries, parameter = list(minlen=2, maxlen=10,supp=.01, conf=.8))
+rules
+
+inspect(rules)
+
+# Getting more rules
+
+rules <- apriori(Groceries, parameter = list(minlen=2, maxlen=5,supp=.1, conf=.5),appearance=list(rhs=c("tropical fruit=Yes"),lhs=c("yogurt=Yes", "coffee=Yes", "whole milk=Yes", "cereals=Yes", "butter=Yes", "chicken=Yes", "butter=Yes", "pip fruit=Yes"),default="none"))
+quality(rules)<-round(quality(rules),digits=3)
+rules.sorted <- sort(rules, by="lift")
+
+# Plotting graphs
+
+library(arulesViz)
+plot(rules)
+
+plot(rules,method="grouped")
+
+plot(rules,method="graph")
