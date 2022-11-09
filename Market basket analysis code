@@ -1,34 +1,52 @@
-install.packages("tidyverse")
-install.packages("dplyr")
 install.packages("arules")
-install.packages("arulesviz")
-
-Groceries <- read.csv("Groceries.csv", header=T, colClasses = "factor")
-str(Groceries)
-
-# Association rules
-
+install.packages("arulesViz")
+install.packages("tidyverse")
+install.packages("ggplot2")
+library(tidyverse)
 library(arules)
-rules <- apriori(Groceries)
+library(arulesViz)
+library(ggplot2)
+library(datasets)
 
-# Rules with parameter values
+Groceries <- read.csv("C:/Users/Asus/Downloads/Groceries.csv", sep="")
+View(Groceries)
+data("Groceries")
 
-rules <- apriori(Groceries, parameter = list(minlen=2, maxlen=10,supp=.01, conf=.8))
-rules
+# Create an item frequency plot for the top 20 items
+itemFrequencyPlot(Groceries,topN=20,type="absolute")
 
+# Get the rules
+rules <- apriori(Groceries, parameter = list(supp = 0.001, conf = 0.8))
+inspect(rules)
+r.df <- as(rules, "data.frame")
+View(r.df)
+
+# Sorting by confidence 
+rules<-sort(rules, by="confidence", decreasing=TRUE)
 inspect(rules)
 
-# Getting more rules
+# Using maxlen to get more concise rules
+rules <- apriori(Groceries, parameter = list(supp = 0.001, conf = 0.8,maxlen=3))
+inspect(rules)
 
-rules <- apriori(Groceries, parameter = list(minlen=2, maxlen=5,supp=.1, conf=.5),appearance=list(rhs=c("tropical fruit=Yes"),lhs=c("yogurt=Yes", "coffee=Yes", "whole milk=Yes", "cereals=Yes", "butter=Yes", "chicken=Yes", "butter=Yes", "pip fruit=Yes"),default="none"))
-quality(rules)<-round(quality(rules),digits=3)
-rules.sorted <- sort(rules, by="lift")
+# Setting the rhs value to 'whole milk'
+rules<-apriori(data=Groceries, parameter=list(supp=0.001,conf = 0.08), 
+               appearance = list(default="lhs",rhs="whole milk"),
+               control = list(verbose=F))
+rules<-sort(rules, decreasing=TRUE,by="confidence")
+inspect(rules[1:20])
 
-# Plotting graphs
-
-library(arulesViz)
-plot(rules)
-
-plot(rules,method="grouped")
-
-plot(rules,method="graph")
+# Frequent items plot
+itemFrequencyGGPlot <- function(x, topN) {
+  library(tidyverse)
+  x %>%
+    itemFrequency %>%
+    sort %>%
+    tail(topN) %>%
+    as.data.frame %>%
+    tibble::rownames_to_column() %>%
+    ggplot(aes(reorder(rowname, `.`),`.`)) + 
+    geom_col() + 
+    coord_flip()
+}  
+itemFrequencyGGPlot(Groceries, 20)
